@@ -8,15 +8,16 @@ use EE_Error;
 use EE_Event;
 use EE_Price;
 use EE_Price_Type;
+use EE_Question_Group;
 use EE_Ticket;
 use EEM_Datetime_Ticket;
 use EEM_Price;
 use EEM_Price_Type;
+use EEM_Question_Group;
 use EventEspresso\core\exceptions\InvalidDataTypeException;
 use EventEspresso\core\exceptions\InvalidInterfaceException;
 use InvalidArgumentException;
 use ReflectionException;
-use function ucwords;
 
 /**
  * Class EventDataGenerator
@@ -33,6 +34,11 @@ class EventDataGenerator extends DataGenerator
      * @var EE_Price_Type[] $price_types
      */
     protected $price_types;
+
+    /**
+     * @var EE_Question_Group[] $question_groups
+     */
+    protected $question_groups;
 
 
     /**
@@ -51,6 +57,7 @@ class EventDataGenerator extends DataGenerator
         parent::__construct($data_tracker);
         $this->setupPriceTypes();
         $this->setupTaxes();
+        $this->getQuestionGroups();
     }
 
 
@@ -80,7 +87,7 @@ class EventDataGenerator extends DataGenerator
      * @throws InvalidDataTypeException
      * @throws InvalidInterfaceException
      */
-    public function setupPriceTypes()
+    protected function setupPriceTypes()
     {
         $price_types = EEM_Price_Type::instance()->get_all();
         foreach ($price_types as $price_type) {
@@ -100,7 +107,7 @@ class EventDataGenerator extends DataGenerator
      * @throws InvalidInterfaceException
      * @throws ReflectionException
      */
-    public function setupTaxes()
+    protected function setupTaxes()
     {
         EEM_Price::instance()->delete(array(array('PRC_ID' => 2)));
         $taxes = EEM_Price::instance()->get_all(array(array('PRT_ID' => array('IN', array(6,7)))));
@@ -117,6 +124,15 @@ class EventDataGenerator extends DataGenerator
                 EE_Error::add_success("Added {$tax} Price Modifier");
             }
         }
+    }
+
+
+    /**
+     * @throws EE_Error
+     */
+    protected function getQuestionGroups()
+    {
+        $this->question_groups = EEM_Question_Group::instance()->get_all();
     }
 
 
@@ -183,7 +199,74 @@ class EventDataGenerator extends DataGenerator
             $this->createTickets(),
             $this->addDatetimesToEvent($event)
         );
+        $this->addQuestionGroupsToEvent($event);
         return $event;
+    }
+
+
+    /**
+     * @param EE_Event $event
+     * @return void
+     * @throws DomainException
+     * @throws EE_Error
+     * @throws InvalidArgumentException
+     * @throws InvalidDataTypeException
+     * @throws InvalidInterfaceException
+     */
+    protected function addQuestionGroupsToEvent(EE_Event $event)
+    {
+        $primary = array();
+        $additional = array();
+        $others_have_personal = false;
+        // add question groups
+        foreach ($this->question_groups as $question_group) {
+            if($question_group instanceof EE_Question_Group) {
+                switch($question_group->system_group()){
+                    case EEM_Question_Group::system_personal :
+                        // always add personal question group for primary registrant
+                        $event->add_question_group($question_group, true);
+                        $primary[] = $question_group->name(true);
+                        if(mt_rand(0,1)) {
+                            // 1 in 2 chance of adding QG
+                            $event->add_question_group($question_group);
+                            $additional[] = $question_group->name(true);
+                            $others_have_personal = true;
+                        }
+                        break;
+                    case EEM_Question_Group::system_address :
+                        if(mt_rand(0,1)) {
+                            // 1 in 2 chance of adding QG
+                            $event->add_question_group($question_group, true);
+                            $primary[] = $question_group->name(true);
+                        }
+                        if($others_have_personal && mt_rand(0,1)) {
+                            // 1 in 2 chance of adding QG
+                            $event->add_question_group($question_group);
+                            $additional[] = $question_group->name(true);
+                        }
+                        break;
+                    default :
+                        if(mt_rand(0,3) === 3) {
+                            // 1 in 4 chance of adding QG
+                            $event->add_question_group($question_group, true);
+                            $primary[] = $question_group->name(true);
+                        }
+                        if($others_have_personal && mt_rand(0,3) === 3) {
+                            // 1 in 4 chance of adding QG
+                            $event->add_question_group($question_group);
+                            $additional[] = $question_group->name(true);
+                        }
+                        break;
+                }
+            }
+        }
+        $this->log("&nbsp; . added the following Question Groups for the Primary Registrant:<br />&nbsp; . . ");
+        $this->log(implode(', ', $primary) . "<br />");
+        if($additional !== array()) {
+            $this->log("&nbsp; . added the following Question Groups for additional Registrants:<br />&nbsp; . . ");
+            $this->log(implode(', ', $additional) . "<br />");
+
+        }
     }
 
 
@@ -309,7 +392,7 @@ class EventDataGenerator extends DataGenerator
                         $random_datetime->_add_relation_to($ticket, 'Ticket');
                         $ticket_relations[ $ticket->ID() ] = array(
                             'ticket'    => $ticket,
-                            'datetimes' => array($random_datetime->ID() => $datetime),
+                            'datetimes' => array($random_datetime->ID() => $random_datetime),
                         );
                     }
                 }
@@ -506,7 +589,6 @@ class EventDataGenerator extends DataGenerator
      * @param string $name
      * @return EE_Price_Type
      * @throws DomainException
-     * @throws EE_Error
      * @throws InvalidArgumentException
      * @throws InvalidDataTypeException
      * @throws InvalidInterfaceException
