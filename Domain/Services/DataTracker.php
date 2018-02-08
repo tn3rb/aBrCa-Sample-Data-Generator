@@ -61,6 +61,11 @@ class DataTracker
      */
     protected $is_ajax;
 
+    /**
+     * @var boolean $no_header
+     */
+    protected $no_header;
+
 
     /**
      * SampleDataGenerator constructor.
@@ -74,6 +79,7 @@ class DataTracker
             $this->log('<strong>Auto Generated Sample Data</strong><br />');
         }
         $this->is_ajax = defined('DOING_AJAX') && DOING_AJAX;
+        $this->no_header = isset($_GET['noheader']);
         add_action('shutdown', array($this, 'saveObjectSeeds'));
     }
 
@@ -213,7 +219,7 @@ class DataTracker
     {
         update_option(DataTracker::OPTION_KEY_OBJECT_SEEDS, $this->object_seeds, false);
         update_option(DataTracker::OPTION_KEY_DATA_GEN_LOG, $this->data_log, false);
-        if (! $this->is_ajax) {
+        if (! $this->is_ajax && ! $this->no_header) {
             echo '<div style="border:1px solid #ccc; background:#fff; clear: both; margin:2em 1em; padding:2em;">';
             echo $this->data_log;
             echo '</div>';
