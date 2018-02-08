@@ -98,24 +98,34 @@ class CartDataGenerator extends DataGenerator
     private function createCart($timestamp = 0)
     {
         $this->populateObjects('Ticket');
-        /** @var EE_Ticket $ticket */
-        $ticket = $this->getAnyObject('Ticket');
-        if ($ticket instanceof EE_Ticket && $ticket->first_datetime() instanceof EE_Datetime) {
-            $total_line_item = EEH_Line_Item::create_total_line_item();
-            $total_line_item->set_TXN_ID(0);
-            EEH_Line_Item::add_ticket_purchase(
-                $total_line_item,
-                $ticket,
-                mt_rand(1, 10)
-            );
+        $added =  0;
+        $tickets_added = 0;
+        $total_line_item = EEH_Line_Item::create_total_line_item();
+        $total_line_item->set_TXN_ID(0);
+        $tickets_to_add = mt_rand(1,4);
+        for($x = 0; $x < $tickets_to_add; $x++){
+            /** @var EE_Ticket $ticket */
+            $ticket = $this->getAnyObject('Ticket');
+            if ($ticket instanceof EE_Ticket && $ticket->first_datetime() instanceof EE_Datetime) {
+                $tickets_added++;
+                $qty = mt_rand(1, 10);
+                EEH_Line_Item::add_ticket_purchase(
+                    $total_line_item,
+                    $ticket,
+                    $qty
+                );
+                $ticket->increase_reserved($qty);
+            }
+        }
+        if($tickets_added) {
             $this->adjustLineItemTimestamps(
                 $total_line_item,
                 $timestamp,
                 "<br />creating Cart {$total_line_item->name()} {$total_line_item->total_no_code()}<br />"
             );
-            return $total_line_item->save_this_and_descendants();
+            $added += $total_line_item->save_this_and_descendants_to_txn(0);
         }
-        return 0;
+        return $added;
     }
 
 
