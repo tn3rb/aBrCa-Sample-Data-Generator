@@ -2,8 +2,6 @@
 
 namespace aBrCa\SampleDataGenerator\Domain\Services;
 
-use function array_rand;
-use EE_Base;
 use EE_Base_Class;
 use EE_Error;
 use EE_Registry;

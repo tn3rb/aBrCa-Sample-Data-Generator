@@ -12,7 +12,6 @@ use EventEspresso\core\exceptions\InvalidDataTypeException;
 use EventEspresso\core\exceptions\InvalidInterfaceException;
 use InvalidArgumentException;
 use ReflectionException;
-use const WEEK_IN_SECONDS;
 
 /**
  * Class CartDataGenerator

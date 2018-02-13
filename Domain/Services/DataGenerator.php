@@ -22,7 +22,6 @@ use EventEspresso\core\exceptions\InvalidDataTypeException;
 use EventEspresso\core\exceptions\InvalidInterfaceException;
 use InvalidArgumentException;
 use ReflectionException;
-use function ucwords;
 use WP_User;
 
 
@@ -189,7 +188,9 @@ abstract class DataGenerator
 
 
     /**
-     *Creates a model object and its required dependencies
+     * Creates a model object and its required dependencies
+     * basically a copy of EE_UnitTestCase::new_model_obj_with_dependencies()
+     * which was created by Michael Nelson
      *
      * @param string  $model_name
      * @param array   $args array of arguments to supply when constructing the model object
