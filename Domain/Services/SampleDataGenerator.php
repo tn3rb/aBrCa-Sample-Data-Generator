@@ -60,16 +60,14 @@ class SampleDataGenerator
      */
     public function addSampleData()
     {
-        if (isset($_REQUEST['add_sample_data']) ) {
-            $add_sample_data = sanitize_text_field($_REQUEST['add_sample_data']);
-            switch ($add_sample_data) {
-                case 'event' :
-                    $this->event_data_generator->addSampleEventData();
-                    break;
-                case 'cart' :
-                    $this->cart_data_generator->addSampleCartData();
-                    break;
-            }
+        $add_sample_data = sanitize_text_field($_REQUEST['add_sample_data']);
+        switch ($add_sample_data) {
+            case 'event' :
+                $this->event_data_generator->addSampleEventData();
+                break;
+            case 'cart' :
+                $this->cart_data_generator->addSampleCartData();
+                break;
         }
     }
 

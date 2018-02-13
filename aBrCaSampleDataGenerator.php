@@ -37,8 +37,10 @@ class aBrCaSampleDataGenerator
      */
     public function __construct()
     {
-        add_action('AHEE__EE_System__initialize', array($this, 'loadSampleDataGenerator'));
-        add_action('AHEE__EE_System__initialize_last', array($this, 'addSampleData'));
+        if (isset($_REQUEST['add_sample_data'])) {
+            add_action('AHEE__EE_System__initialize', array($this, 'loadSampleDataGenerator'));
+            add_action('AHEE__EE_System__initialize_last', array($this, 'addSampleData'));
+        }
     }
 
 
