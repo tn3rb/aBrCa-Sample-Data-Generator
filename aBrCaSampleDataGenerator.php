@@ -2,7 +2,7 @@
 /*
 Plugin Name: aBrCa Sample Data Generator
 Plugin URI: http://URI_Of_Page_Describing_Plugin_and_Updates
-Description: Generates Sample Data for Event Espresso
+Description: Generates sample data for Event Espresso
 Version: 1.0.0
 Author: aBrCa
 Author URI: http://URI_Of_The_Plugin_Author
@@ -12,6 +12,7 @@ License: A "Slug" license name e.g. GPL2
 use aBrCa\SampleDataGenerator\Domain\Services\SampleDataGenerator;
 use EventEspresso\core\exceptions\InvalidDataTypeException;
 use EventEspresso\core\exceptions\InvalidInterfaceException;
+use EventEspresso\core\services\loaders\LoaderFactory;
 
 /**
  * Class aBrCaSampleDataGenerator
@@ -38,24 +39,51 @@ class aBrCaSampleDataGenerator
     public function __construct()
     {
         if (isset($_REQUEST['add_sample_data'])) {
+            add_action('AHEE__EE_System__initialize', array($this, 'registerDependencies'), 9);
             add_action('AHEE__EE_System__initialize', array($this, 'loadSampleDataGenerator'));
             add_action('AHEE__EE_System__initialize_last', array($this, 'addSampleData'));
         }
     }
 
 
+    public function registerDependencies()
+    {
+        EE_Dependency_Map::register_dependencies(
+            'aBrCa\SampleDataGenerator\Domain\Services\SampleDataGenerator',
+            array(
+                'aBrCa\SampleDataGenerator\Domain\Services\CartDataGenerator'  => EE_Dependency_Map::load_from_cache,
+                'aBrCa\SampleDataGenerator\Domain\Services\EventDataGenerator' => EE_Dependency_Map::load_from_cache,
+            )
+        );
+        EE_Dependency_Map::register_dependencies(
+            'aBrCa\SampleDataGenerator\Domain\Services\CartDataGenerator',
+            array(
+                'EE_Cart'                                                  => EE_Dependency_Map::load_from_cache,
+                'aBrCa\SampleDataGenerator\Domain\Services\DataTracker'    => EE_Dependency_Map::load_from_cache,
+                'EventEspresso\core\domain\values\session\SessionLifespan' => EE_Dependency_Map::load_from_cache,
+            )
+        );
+        EE_Dependency_Map::register_dependencies(
+            'aBrCa\SampleDataGenerator\Domain\Services\EventDataGenerator',
+            array(
+                'aBrCa\SampleDataGenerator\Domain\Services\DataTracker' => EE_Dependency_Map::load_from_cache,
+            )
+        );
+    }
+
+
     /**
-     * @throws ReflectionException
      * @throws InvalidArgumentException
      * @throws InvalidInterfaceException
      * @throws InvalidDataTypeException
-     * @throws EE_Error
      * @throws DomainException
      */
     public function loadSampleDataGenerator()
     {
         EE_Psr4AutoloaderInit::psr4_loader()->addNamespace('aBrCa\SampleDataGenerator', __DIR__);
-        $this->sample_data_generator = new aBrCa\SampleDataGenerator\Domain\Services\SampleDataGenerator();
+        $this->sample_data_generator = LoaderFactory::getLoader()->getShared(
+            'aBrCa\SampleDataGenerator\Domain\Services\SampleDataGenerator'
+        );
     }
 
 
@@ -78,7 +106,7 @@ class aBrCaSampleDataGenerator
      */
     public static function activation()
     {
-        if(get_option(aBrCaSampleDataGenerator::OPTION_KEY_ACTIVATED)) {
+        if(get_option(self::OPTION_KEY_ACTIVATED)) {
             return;
         }
         // get the Primary menu object by its name
@@ -127,7 +155,7 @@ class aBrCaSampleDataGenerator
             )
         );
         // then update the menu_check option to make sure this code only runs once
-        update_option(aBrCaSampleDataGenerator::OPTION_KEY_ACTIVATED, true);
+        update_option(self::OPTION_KEY_ACTIVATED, true);
     }
 }
 new aBrCaSampleDataGenerator();
