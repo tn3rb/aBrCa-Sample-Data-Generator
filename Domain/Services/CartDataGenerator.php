@@ -8,6 +8,7 @@ use EE_Error;
 use EE_Line_Item;
 use EE_Ticket;
 use EEH_Line_Item;
+use EventEspresso\core\domain\values\session\SessionLifespan;
 use EventEspresso\core\exceptions\InvalidDataTypeException;
 use EventEspresso\core\exceptions\InvalidInterfaceException;
 use InvalidArgumentException;
@@ -29,17 +30,24 @@ class CartDataGenerator extends DataGenerator
      */
     protected $cart;
 
+    /**
+     * @var SessionLifespan
+     */
+    private $session_lifespan;
+
 
     /**
      * CartDataGenerator constructor.
      *
-     * @param EE_Cart     $cart
-     * @param DataTracker $data_tracker
+     * @param EE_Cart         $cart
+     * @param DataTracker     $data_tracker
+     * @param SessionLifespan $session_lifespan
      */
-    public function __construct(EE_Cart $cart, DataTracker $data_tracker)
+    public function __construct(EE_Cart $cart, DataTracker $data_tracker, SessionLifespan $session_lifespan)
     {
         parent::__construct($data_tracker);
         $this->cart = $cart;
+        $this->session_lifespan = $session_lifespan;
     }
 
 
@@ -113,7 +121,9 @@ class CartDataGenerator extends DataGenerator
                     $ticket,
                     $qty
                 );
-                $ticket->increase_reserved($qty);
+                if($this->session_lifespan->expiration() <= $timestamp) {
+                    $ticket->increase_reserved($qty, 'CartDataGenerator:' . __LINE__);
+                }
             }
         }
         if($tickets_added) {
@@ -133,6 +143,10 @@ class CartDataGenerator extends DataGenerator
      * @param int          $timestamp
      * @param string       $log_note
      * @throws EE_Error
+     * @throws InvalidArgumentException
+     * @throws InvalidDataTypeException
+     * @throws InvalidInterfaceException
+     * @throws ReflectionException
      */
     private function adjustLineItemTimestamps(EE_Line_Item $line_item, $timestamp, $log_note)
     {
