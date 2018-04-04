@@ -3,7 +3,6 @@
 namespace aBrCa\SampleDataGenerator\Domain\Services;
 
 use DomainException;
-use EE_Cart;
 use EE_Error;
 use EventEspresso\core\exceptions\InvalidDataTypeException;
 use EventEspresso\core\exceptions\InvalidInterfaceException;
@@ -35,18 +34,13 @@ class SampleDataGenerator
     /**
      * SampleDataGenerator constructor.
      *
-     * @throws ReflectionException
-     * @throws InvalidArgumentException
-     * @throws InvalidInterfaceException
-     * @throws InvalidDataTypeException
-     * @throws EE_Error
-     * @throws DomainException
+     * @param CartDataGenerator $cart_data_generator
+     * @param EventDataGenerator $event_data_generator
      */
-    public function __construct()
+    public function __construct(CartDataGenerator $cart_data_generator, EventDataGenerator $event_data_generator)
     {
-        $data_tracker = new DataTracker();
-        $this->event_data_generator = new EventDataGenerator($data_tracker);
-        $this->cart_data_generator = new CartDataGenerator(EE_Cart::instance(), $data_tracker);
+        $this->cart_data_generator  = $cart_data_generator;
+        $this->event_data_generator = $event_data_generator;
     }
 
 
